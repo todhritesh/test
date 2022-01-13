@@ -566,3 +566,291 @@ for testing
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------
+------------------------------------
+
+
+
+<?php
+
+namespace App\Http\Controllers\admin_report;
+
+use App\Http\Controllers\Controller;
+use App\Models\Appointment;
+use App\Models\Centre;
+use App\Models\Centre_Detail;
+use App\Models\Patient;
+use App\Models\patient_bill;
+use App\Models\Post_dialysis;
+use App\Models\StockMaintenance;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+
+class CenterBasedReportController extends Controller
+{
+    //hospital report
+    function hospital_report(Request $req){
+
+
+        if($req->branch_code==null){
+            $check_branch = Centre::first();
+            $bc = $check_branch->code;
+        }else{
+            $check_branch = Centre::where('code',$req->branch_code)->first();
+            if(is_null($check_branch)){
+                return response()->json([
+                    'message'=>'invalid branch name',
+                ],403);
+            }
+            $bc = $req->branch_code;
+        }
+
+        if($req->date==null){
+            $start_date = date('Y-m-01 00:00:00');
+            $end_date = date('Y-m-d 00:00:00');
+        }else{
+            $validator = Validator::make($req->all(),[
+                'date'=>'required|date_format:Y-m-d H:i:s',
+            ]);
+
+            if($validator->fails()){
+                return response()->json([
+                    'message'=>'validation error',
+                    'error'=>$validator->errors()
+                ],403);
+            }
+
+            $start_date = Carbon::createFromFormat('Y-m-d H:i:s', $req->date)
+                            ->firstOfMonth()
+                            ->format('Y-m-d H:i:s');
+            $end_date = $req->date;
+
+        }
+
+
+
+            $patient = Patient::where('branch_name',$bc)->select('patient_id')->get();
+
+            $pid_array = [];
+            foreach($patient as $p)
+                $pid_array[] = $p->patient_id;
+
+            $app_id = Appointment::whereDate('start_time','<=' ,$end_date)->whereDate('start_time','>=' ,$start_date)->select('appointment_id')->whereIn('patient_id',$pid_array)->where('end_time','!=',null)->get();
+            $dialysis_count = $app_id->count();
+
+
+            // if ap 0 then amount
+            $branch_ap = $check_branch->ap;
+            $branch_code = $check_branch->code;
+            $pay_amount = $check_branch->amount;
+            $pay_percentage = $check_branch->percentage;
+            $branch_perdmy = $check_branch->perdmy;
+
+
+            // if payment is done in amount
+            if($branch_ap==0){
+
+                switch($branch_perdmy){
+                    case "year" : {
+                       $amount = $pay_amount/12;
+                    }
+                    break;
+
+                    case "month" : {
+                        $amount = $pay_amount;
+                    }
+                    break;
+
+                    case "dialysis" : {
+                        $amount = $dialysis_count * $pay_amount;
+                    }
+                    break;
+
+                    default : {
+                        return response()->json([
+                            'message'=>'invalid attempt',
+                        ],404);
+                    }
+                }
+
+            //if payment is done in percentage
+            }else{
+
+                $app_id_array = [];
+                foreach($app_id as $aid)
+                    $app_id_array[] = $aid->appointment_id;
+
+                $per_hour_fee = $check_branch->per_hour_fee;
+                $post_dialysis_data = Post_dialysis::select(DB::raw("SUM(eh) as extra_hour , SUM(amount) as pd_amount"))->whereIn('appointment_id',$app_id_array)->get();
+                $extra_hour_amount = $per_hour_fee * $post_dialysis_data[0]['extra_hour'];
+                $post_dialysis_amount = $post_dialysis_data[0]['pd_amount'];
+                switch($branch_perdmy){
+                    case "year" : {
+                        $amount = round((($pay_percentage/100)*($post_dialysis_amount - $extra_hour_amount)/12),2);
+                    }
+                    break;
+
+                    case "month" : {
+                        $amount = round((($pay_percentage/100)*($post_dialysis_amount - $extra_hour_amount)),2);
+                    }
+                    break;
+
+                    case "dialysis" : {
+                        $amount = round(($pay_percentage/100) * ($dialysis_count * ($post_dialysis_amount - $extra_hour_amount)),2);
+                    }
+                    break;
+
+                    default : {
+                        return response()->json([
+                            'message'=>'invalid attempt',
+                        ],404);
+                    }
+                }
+
+            }
+
+
+
+
+
+
+            $additional = [];
+            $additional_expenses = Centre_Detail::where('centre_name',$check_branch->code)->get();
+            $total_additional_expense = 0;
+            if(!$additional_expenses->isEmpty()){
+                foreach($additional_expenses as $ae){
+                    $total_additional_expense+=$ae->amount;
+                    $additional[] = [
+                        'name'=>$ae->name,
+                        'amount'=>$ae->amount
+                    ];
+                }
+            }
+
+            $data = [
+                'hospital_name'=>$check_branch->centre_name,
+                'hospital_code'=>$branch_code,
+                'dialysis_count'=>$dialysis_count,
+                'additonal_expenses'=>$additional,
+                'amount'=>$amount,
+                'total_amount'=>$total_additional_expense + $amount
+            ];
+
+            return response()->json([
+                'message'=>'hospital report fetched',
+                'data'=>$data,
+            ],200);
+
+    }
+
+    //stock maintainance report
+    function stock_maintainance_report(Request $req){
+
+        if($req->date==null){
+            $start_date = date('Y-m-01 00:00:00');
+            $end_date = date('Y-m-d 00:00:00');
+        }else{
+            $validator = Validator::make($req->all(),[
+                'date'=>'required|date_format:Y-m-d H:i:s',
+            ]);
+
+            if($validator->fails()){
+                return response()->json([
+                    'message'=>'validation error',
+                    'error'=>$validator->errors()
+                ],403);
+            }
+
+            $start_date = Carbon::createFromFormat('Y-m-d H:i:s', $req->date)
+                            ->firstOfMonth()
+                            ->format('Y-m-d H:i:s');
+            $end_date = $req->date;
+        }
+
+        $basic_details = DB::table('appointments')
+                ->whereDate('start_time','<=' ,$end_date)
+                ->whereDate('start_time','>=' ,$start_date)
+                ->where('end_time','!=',null)
+                ->join('patient','patient.patient_id','appointments.patient_id')
+                ->join('centre','centre.code','patient.branch_name')
+                ->join('pre_dialysis','pre_dialysis.appointment_id','appointments.appointment_id')
+                ->select('patient.name as patient_name','pre_dialysis.private','centre.code','centre.centre_name','appointments.appointment_id as app_id','appointments.start_time')
+                ->get();
+
+        if($basic_details->count()<1){
+            return response()->json([
+                'message'=>'not found'
+            ],404);
+        }
+
+        $distinct_stocks = StockMaintenance::groupBy('product_name')->get();
+        $total_basic_details = $basic_details->count();
+        $sub_total = 0;
+
+        $data = [];
+        foreach($basic_details as $bd){
+            $used_stocks = [];
+            $total = 0;
+            foreach($distinct_stocks as $ds){
+                $patient_bill = patient_bill::where([['appointment_id',$bd->app_id],['name',$ds->product_name]])->select('name','count','cost_price')->first();
+                if($patient_bill==null){
+                    $used_stocks[$ds->product_name] = [
+                        'count' => 0,
+                        'cost_price' => 0,
+                    ];
+                }else{
+                    $total += ($patient_bill->count * $patient_bill->cost_price);
+                    $used_stocks[$patient_bill->name] = [
+                        'count' => $patient_bill->count,
+                        'cost_price' => $patient_bill->cost_price,
+                    ];
+                }
+                $sub_total += $total;
+            }
+            $data[] = [
+                'patient_name'=>$bd->patient_name,
+                'hospital_name'=>$bd->centre_name,
+                'scheme'=>($bd->private=='yes') ? 'private' : 'government' ,
+                'date'=>$bd->start_time,
+                'stocks'=> $used_stocks,
+                'total'=> $total,
+            ];
+        }
+
+        $total_average = round($sub_total/$total_basic_details);
+
+        return response()->json([
+            'message'=>'stock_maintainence report fetched',
+            'data'=>[
+                $data,
+                'average'=>$total_average,
+                'sub_total'=>$sub_total
+            ]
+        ],200);
+
+    }
+}
+
