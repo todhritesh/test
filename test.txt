@@ -1,639 +1,31 @@
-for testing
-
-
-            $rules = [
-                "basic_details"=>[
-                    'patient_id'=>"required",
-                    'opening_staff'=>"required",
-                    'closing_staff'=>"required",
-                    'arrival_date'=>"required|date",
-                    "start_time" => "required|date_format:H:i",
-                    "end_time" =>  "required|date_format:H:i",
-                ],
-
-
-                "pre_dialysis"=>[
-                    "bp_systolic" => "required",
-                    "bp_diasystolic"  => "required",
-                    "heart_rate" =>"required",
-                    "weight" => "required",
-                    "spo2"  => "required",
-                    "reused_dialyzer" => "required",
-                    "dialyzer"  => "required",
-                    "reused_tubing" => "required",
-                    "machine_id" => "required",
-                    "scheduled_emergency" => "required",
-                    "access_av" => "required",
-                    "bp_high" => "required",
-                    "bp_low" => "required",
-                    "nausea" => "required",
-                    "vomiting" => "required",
-                    "short_breath" => "required",
-                    "bleeding" => "required",
-                    "edema" => "required",
-                    "stomach_distend" => "required",
-                    "diarrhea" => "required",
-                    "other" => "required",
-                    "remarks" => "required",
-                    "site_condition" => "required",
-                    "explain" => "required",
-                ],
-
-                "patient_parameter"=>[
-                    "*.time" => "required|date_format:H:i:s",
-                    "*.bps" => "required",
-                    "*.bpd" => "required",
-                    "*.pulse" => "required",
-                    "*.uf_rate" => "required",
-                    "*.uf_volume" => "required",
-                    "*.ap" => "required",
-                    "*.vp" => "required",
-                    "*.tmp" => "required",
-                    "*.kvt" => "required",
-                    "*.actions" => "required" ,
-                ],
-
-                "post_dialysis"=>[
-                    'bp_systolic'=>'required|numeric|min:110:|max:140',
-                    'bp_diasystolic'=>'required|numeric|min:70|max:90',
-                    'heart_rate'=>'required|numeric|min:60|max:100',
-                    "weight" => "required",
-                    "eh" => "required",
-                    "mode_of_transport" => "required",
-                    "bp_high" => "required",
-                    "bp_low" => "required",
-                    "nausea" => "required",
-                    "vomiting" => "required",
-                    "short_breath" => "required",
-                    "bleeding" => "required",
-                    "edema" => "required",
-                    "hypoglycemia" => "required",
-                    "diarrhea" => "required",
-                    "other" => "required",
-                    "remarks" => "required",
-                    "dizziness" => "required",
-                    "orthostatic_hypotension" => "required"
-                ]
-                ];
-
-                $errors = [];
-
-                $validate_basic_details = Validator::make($req->all()['basic_details'],$rules['basic_details']);
-                $validate_patient_parameter = Validator::make($req->all()['patient_parameter'],$rules['patient_parameter']);
-                $validate_pre_dialysis = Validator::make($req->all()['pre_dialysis'],$rules['pre_dialysis']);
-                $validate_post_dialysis = Validator::make($req->all()['post_dialysis'],$rules['post_dialysis']);
-
-
-                if($validate_basic_details->fails())
-                    $errors['validate_basic_details'] = $validate_basic_details->errors();
-
-                if($validate_patient_parameter->fails())
-                    $errors['validate_patient_parameter'] = $validate_patient_parameter->errors();
-
-                if($validate_pre_dialysis->fails())
-                    $errors['validate_pre_dialysis'] = $validate_pre_dialysis->errors();
-
-                if($validate_post_dialysis->fails())
-                    $errors['validate_post_dialysis'] = $validate_post_dialysis->errors();
-
-                if($validate_basic_details->fails() || $validate_patient_parameter->fails() || $validate_pre_dialysis->fails() ||$validate_post_dialysis->fails()){
-                    return response()->json([
-                        'message'=>'validation error',
-                        'errors'=>$errors,
-                    ],403);
-                }
-
-                $arrival_date = $req->all()['basic_details']['arrival_date'];
-                $start_time = $arrival_date." ".$req->all()['basic_details']['start_time'].":00";
-                $end_time = $arrival_date." ".$req->all()['basic_details']['end_time'].":00";
-                $patient_id = $req->all()['basic_details']['patient_id'];
-
-                $appointment_insert = new Appointment();
-                $appointment_insert->patient_id = $patient_id;
-                $appointment_insert->start_time = $start_time;
-                $appointment_insert->end_time = $end_time;
-                $appointment_insert->record_type = "pre_dialysis";
-                $appointment_insert->save();
-                $apid = $appointment_insert->appointment_id;
-
-
-                //pre dialysis
-                $opening_staff = $req->all()['basic_details']['opening_staff'];
-                $predialysis_data = $req->all()['pre_dialysis'];
-                $predialysis_insert = new Pre_dialysis();
-                $predialysis_insert->appointment_id = $apid;
-                $predialysis_insert->bp_systolic = $predialysis_data['bp_systolic'];
-                $predialysis_insert->bp_diasystolic  = $predialysis_data['bp_diasystolic'];
-                $predialysis_insert->heart_rate = $predialysis_data['heart_rate'];
-                $predialysis_insert->weight = $predialysis_data['weight'];
-                $predialysis_insert->spo2 = $predialysis_data['spo2'];
-                $predialysis_insert->reused_dialyzer = $predialysis_data['reused_dialyzer'];
-                $predialysis_insert->dialyzer  = $predialysis_data['dialyzer'];
-                $predialysis_insert->reused_tubing = $predialysis_data['reused_tubing'];
-                $predialysis_insert->machine_id = $predialysis_data['machine_id'];
-                $predialysis_insert->scheduled_emergency = $predialysis_data['scheduled_emergency'];
-                $predialysis_insert->access_av = $predialysis_data['access_av'];
-                $predialysis_insert->bp_high = $predialysis_data['bp_high'];
-                $predialysis_insert->bp_low = $predialysis_data['bp_low'];
-                $predialysis_insert->nausea = $predialysis_data['nausea'];
-                $predialysis_insert->vomiting = $predialysis_data['vomiting'];
-                $predialysis_insert->short_breath = $predialysis_data['short_breath'];
-                $predialysis_insert->bleeding = $predialysis_data['bleeding'];
-                $predialysis_insert->edema = $predialysis_data['edema'];
-                $predialysis_insert->stomach_distend = $predialysis_data['stomach_distend'];
-                $predialysis_insert->diarrhea = $predialysis_data['diarrhea'];
-                $predialysis_insert->other = $predialysis_data['other'];
-                $predialysis_insert->remarks = $predialysis_data['remarks'];
-                $predialysis_insert->site_condition = $predialysis_data['site_condition'];
-                $predialysis_insert->explain = $predialysis_data['explain'];
-                $predialysis_insert->private = $predialysis_data['private'];
-                $predialysis_insert->technician = $opening_staff;
-                $saved_predialysis = $predialysis_insert->save();
-
-
-                //post dialysis
-                $postdialysis_data = $req->all()['post_dialysis'];
-                $postdialysis_insert = new Post_dialysis();
-                $postdialysis_insert->bp_systolic = $postdialysis_data['bp_systolic'];
-                $postdialysis_insert->appointment_id = $apid;
-                $postdialysis_insert->bp_diasystolic  = $postdialysis_data['bp_diasystolic'];
-                $postdialysis_insert->heart_rate = $postdialysis_data['heart_rate'];
-                $postdialysis_insert->weight = $postdialysis_data['weight'];
-                $postdialysis_insert->eh = $postdialysis_data['eh'];
-                $postdialysis_insert->mode_of_transport = $postdialysis_data['mode_of_transport'];
-                $postdialysis_insert->bp_high = $postdialysis_data['bp_high'];
-                $postdialysis_insert->bp_low = $postdialysis_data['bp_low'];
-                $postdialysis_insert->nausea = $postdialysis_data['nausea'];
-                $postdialysis_insert->vomiting = $postdialysis_data['vomiting'];
-                $postdialysis_insert->short_breath = $postdialysis_data['short_breath'];
-                $postdialysis_insert->bleeding = $postdialysis_data['bleeding'];
-                $postdialysis_insert->edema = $postdialysis_data['edema'];
-                $postdialysis_insert->hypoglycemia = $postdialysis_data['hypoglycemia'];
-                $postdialysis_insert->diarrhea = $postdialysis_data['diarrhea'];
-                $postdialysis_insert->other = $postdialysis_data['other'];
-                $postdialysis_insert->remarks = $postdialysis_data['remarks'];
-                $postdialysis_insert->dizziness = $postdialysis_data['dizziness'];
-                $postdialysis_insert->orthostatic_hypotension = $postdialysis_data['orthostatic_hypotension'];
-
-
-                $branch_name = Auth::user()->branch;
-                $failed_consumables = [];
-            foreach($postdialysis_data['consumables'] as $key => $val){
-                $stock_count = StockMaintenance::where([['branch_name',$branch_name],['product_name',$key],['brand',$val['brand']]])->sum('available_count');
-
-                $check = ($stock_count >= $val['count']) ? 1 : 0 ;
-
-                if(!$check){
-                    $failed_consumables[] = $key;
-                }
-
-            }
-
-            $failed_pharmaceuticals = [];
-            foreach($postdialysis_data['pharmaceuticals'] as $key => $val){
-                $stock_count = StockMaintenance::where([['branch_name',$branch_name],['product_name',$key],['brand',$val['brand']]])->sum('available_count');
-
-                $check = ($stock_count >= $val['count']) ? 1 : 0 ;
-
-                if(!$check){
-                    $failed_pharmaceuticals[] = $key;
-                }
-
-            }
-
-            if($failed_pharmaceuticals!=null && $failed_consumables!=null){
-                return response()->json([
-                    'message'=>'something went wrong',
-                    'failed'=>[
-                        'pharmaceuticals'=>$failed_pharmaceuticals,
-                        'consumables'=>$failed_consumables
-                    ]
-                ],404);
-            }
-            elseif($failed_pharmaceuticals!=null ){
-                return response()->json([
-                    'message'=>'something went wrong',
-                    'failed'=>[
-                        'pharmaceuticals'=>$failed_pharmaceuticals,
-                    ]
-                ],404);
-            }
-            elseif($failed_consumables!=null){
-                return response()->json([
-                    'message'=>'something went wrong',
-                    'failed'=>[
-                        'consumables'=>$failed_consumables
-                    ]
-                ],404);
-            }
-        //end stock validation
-
-
-        // saving consumables in patient bill
-
-            foreach($postdialysis_data['consumables'] as $key => $val){
-
-                $patient_bill = new patient_bill();
-
-                if($predialysis_data['private']=='yes'){
-                    $sp_and_cp = StockMaintenance::select('calculated_cost_price','private_selling_price')->where([['product_name',$key],['brand',$val['brand']],['available_count','>=',$val['count']],['branch_name',$this->branch_name]])->first();
-                    $cp = $sp_and_cp->calculated_cost_price;
-                    $sp = $sp_and_cp->private_selling_price;
-                }else{
-                    $sp_and_cp = StockMaintenance::select('calculated_cost_price','mjpjay_selling_price')->where([['product_name',$key],['brand',$val['brand']],['available_count','>=',$val['count']],['branch_name',$this->branch_name]])->first();
-                    $cp = $sp_and_cp->calculated_cost_price;
-                    $sp = $sp_and_cp->mjpjay_selling_price;
-                }
-
-                $patient_bill->appointment_id = $apid;
-                $patient_bill->name = $key;
-                $patient_bill->brand = $val['brand'];
-                $patient_bill->count = $val['count'];
-                $patient_bill->selling_price = $sp;
-                $patient_bill->cost_price = $cp;
-
-                $patient_bill->save();
-            }
-
-        //end saving consumables in patient bill
-
-
-
-        // saving pharmaceuticals in patient bill
-
-            foreach($postdialysis_data['pharmaceuticals'] as $key => $val){
-
-                $patient_bill = new Patient_Bill();
-
-                if($this->is_private_patient($apid)){
-                    $sp_and_cp = StockMaintenance::select('calculated_cost_price','private_selling_price')->where([['product_name',$key],['brand',$val['brand']],['available_count','>=',$val['count']],['branch_name',$branch_name]])->first();
-                    $cp = $sp_and_cp->calculated_cost_price;
-                    $sp = $sp_and_cp->private_selling_price;
-                }else{
-                    $sp_and_cp = StockMaintenance::select('calculated_cost_price','mjpjay_selling_price')->where([['product_name',$key],['brand',$val['brand']],['available_count','>=',$val['count']],['branch_name',$branch_name]])->first();
-                    $cp = $sp_and_cp->calculated_cost_price;
-                    $sp = $sp_and_cp->mjpjay_selling_price;
-                }
-
-                $patient_bill->appointment_id = $apid;
-                $patient_bill->name = $key;
-                $patient_bill->brand = $val['brand'];
-                $patient_bill->count = $val['count'];
-                $patient_bill->selling_price = $sp;
-                $patient_bill->cost_price = $cp;
-
-                $patient_bill->save();
-            }
-
-
-        //end saving pharmaceuticals in patient bill
-
-
-
-
-        // amount and additonal amount work
-
-            //charges
-            $centre_charge = Centre::where('code',$branch_name)->first();
-
-            // reg fee
-            $is_patient_first_time = Appointment::where('patient_id',$patient_id)->count();
-            $reg_fee = 0 ;
-            if($is_patient_first_time==1)
-                $reg_fee = $centre_charge->registration_fee;
-
-
-            //  fee
-            if($predialysis_data['private']=='yes'){   //if yes
-
-                $scheduled_emergency = $predialysis_data['scheduled_emergency'];
-
-                if($scheduled_emergency=='scheduled')
-                    $fee = $centre_charge->normal_fee;
-                else
-                    $fee = $centre_charge->emergency_fee;
-            }
-            else{
-
-                $scheduled_emergency = $predialysis_data['scheduled_emergency'];
-
-                if($scheduled_emergency=='scheduled')
-                    $fee = $centre_charge->m_scheduled;
-                else
-                    $fee = $centre_charge->m_emergency;
-            }
-
-
-            // extra hour
-            if($predialysis_data['private']=='yes')   //if yes
-                $extra_hour_fee = $centre_charge->per_hour_fee * $req->data['basic']['eh'];
-            else
-                $extra_hour_fee = $centre_charge->m_eh * $req->data['basic']['eh'];
-
-
-            // total selling price
-            $stock = Patient_Bill::select('selling_price','count')->where('appointment_id',$apid)->get();
-            $stock_amount = 0;
-            foreach($stock as $val){
-                $stock_amount += $val->selling_price * $val->count;
-            }
-
-
-            //total amount
-            $total_amount = $extra_hour_fee + $fee ;
-            $total_additional_amount = $stock_amount + $reg_fee ;
-
-        //end amount and additonal amount work
-
-
-            $postdialysis_insert->amount = $total_amount ;
-            $postdialysis_insert->additional_amount = $total_additional_amount ;
-            $postdialysis_insert->paid = '0';
-            $postdialysis_insert->mop = ' ';
-            $closing_staff = $req->all()['basic_details']['closing_staff'];
-            $postdialysis_insert->technician = $closing_staff ;
-            $postdialysis_insert->remarks = ($postdialysis_data['remarks']==null) ? ' ' : $postdialysis_data['remarks'] ;
-            $postdialysis_insert->early_discharge = $postdialysis_data['early_discharge'] ;
-            $saved_postdialysis = $postdialysis_insert->save();
-
-        //stock removing
-            foreach($postdialysis_data['pharmaceuticals'] as $key => $val){
-                $to_remove = $val['count'];
-                $remove_stock = StockMaintenance::where([['branch_name',$this->branch_name],['product_name',$key],['brand',$val['brand']]])->get();
-                foreach($remove_stock as $rs){
-                    if($rs->available_count==0){
-                        continue;
-                    }
-                    if($to_remove <= $rs->available_count){
-                        $rs->available_count = $rs->available_count-$to_remove;
-                        $rs->update();
-                        break;
-                    }
-                    elseif($to_remove >= $rs->available_count){
-                        $temp_count = $rs->available_count;
-                        $rs->available_count = 0;
-                        $rs->update();
-                        $to_remove-=$temp_count;
-                    }
-
-                }
-
-            }
-
-            foreach($postdialysis_data['consumables'] as $key => $val){
-                $to_remove = $val['count'];
-                $remove_stock = StockMaintenance::where([['branch_name',$this->branch_name],['product_name',$key],['brand',$val['brand']]])->get();
-                foreach($remove_stock as $rs){
-                    if($rs->available_count==0){
-                        continue;
-                    }
-                    if($to_remove <= $rs->available_count){
-                        $rs->available_count = $rs->available_count-$to_remove;
-                        $rs->update();
-                        break;
-                    }
-                    elseif($to_remove >= $rs->available_count){
-                        $temp_count = $rs->available_count;
-                        $rs->available_count = 0;
-                        $rs->update();
-                        $to_remove-=$temp_count;
-                    }
-
-                }
-            }
-
-        // end stock removing
-
-            //patient_parameter
-            $parameter = $req->all()['patient_parameter'];
-            $x = 1;
-            foreach($parameter as $p){
-                $data = [
-                    'id'=>$x,
-                    'appointment_id'=>1864,
-                    'time'=>$p['time'],
-                    "bps" => $p['bps'],
-                    "bpd" => $p['bpd'],
-                    "pulse" => $p['pulse'],
-                    "uf_rate" => $p['uf_rate'],
-                    "uf_volume" => $p['uf_volume'],
-                    "bf_rate" => $p['bf_rate'],
-                    "ap" => $p['ap'],
-                    "vp" => $p['vp'],
-                    "tmp" => $p['tmp'],
-                    "kv/t" => $p['kvt'],
-                    "actions" =>$p['actions']
-                ];
-                $patient_parameter = new patient_parameter();
-                $patient_parameter->create($data);
-                $x++;
-            }
-
-
-
-
-        if($saved_postdialysis && $saved_predialysis){
-
-            $who = Auth::user();
-            $activity_log = new Activity_log();
-            $activity_log->log = $who->username. $this->who_has_performed() .'  has uploaded offline record : patient_id - '.$patient_id ;
-            $activity_log->action = 'submitted offline record';
-            $activity_log->save();
-
-            return response()->json([
-                'message'=>'post dialysis form saved'
-            ],200);
-        }
-
-
-----------------------------------------------------
-
-
-{
-    "basic_details":{
-        "patient_id":32,
-        "opening_staff":"rewtr",
-        "closing_staff":"wer",
-         "start_time" : "01:02",
-        "end_time" :  "12:43",
-        "arrival_date" : "2020-10-10"
-    },
-
-    "pre_dialysis":{
-        "bp_systolic" : "required",
-        "bp_diasystolic"  : "required",
-        "heart_rate" :"required",
-        "weight" : "required",
-        "spo2"  : "required",
-        "reused_dialyzer" : "required",
-        "dialyzer"  : "required",
-        "reused_tubing" : "required",
-        "machine_id" : "required",
-        "scheduled_emergency" : "required",
-        "access_av" : "required",
-        "bp_high" : "required",
-        "bp_low" : "required",
-        "nausea" : "required",
-        "vomiting" : "required",
-        "short_breath" : "required",
-        "bleeding" : "required",
-        "edema" : "required",
-        "stomach_distend" : "required",
-        "diarrhea" : "required",
-        "other" : "required",
-        "remarks" : "required",
-        "site_condition" : "required",
-        "explain" : "required",
-        "private":"private"
-
-    },
-
-    "patient_parameter":[
-        {
-            "time" : "12:33:12",
-            "bps" : "23",
-            "bpd" : "23",
-            "pulse" : "23",
-            "uf_rate" : "23",
-            "uf_volume" : "23",
-             "bf_rate" : "324",
-            "ap" : "23",
-            "vp" : "23",
-            "tmp" : "23",
-            "kvt" : "23",
-            "actions" : "23" 
-        },
-        {
-            "time" : "12:33:12",
-            "bps" : "23",
-            "bpd" : "23",
-            "pulse" : "23",
-            "uf_rate" : "23",
-            "uf_volume" : "23",
-             "bf_rate" : "324",
-            "ap" : "23",
-            "vp" : "23",
-            "tmp" : "23",
-            "kvt" : "23",
-            "actions" : "23" 
-        }
-    ],
-
-    "post_dialysis":{
-         "bp_systolic" : "required",
-        "bp_diasystolic"  : "required",
-        "heart_rate" : "required",
-        "weight" : "required",
-        "eh" : "required",
-        "mode_of_transport" : "required",
-        "bp_high" : "required",
-        "bp_low" : "required",
-        "nausea" : "required",
-        "vomiting" : "required",
-        "short_breath" : "required",
-        "bleeding" : "required",
-        "edema" : "required",
-        "hypoglycemia" : "required",
-        "diarrhea" : "required",
-        "other" : "required",
-        "remarks" : "required",
-        "dizziness" : "required",
-        "orthostatic_hypotension" : "required",
-        
-        
-        "consumables":{
-            "Heparin":{
-                "brand":"Samarth",
-                "count":3
-            },
-            "17g Needle":{
-                "brand":"Browndove",
-                "count":2
-            }
-        },
-        "pharmaceuticals":{
-            "Inj Dextrose 25% 100ml":{
-                "brand":"Biotech",
-                "count":2
-            },
-             "Inj Iron":{
-                "brand":"Sucrowel",
-                "count":1
-            }
-        },
-        "others":{
-
-        }
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
----------------------------------------
-------------------------------------
-
-
-
 <?php
 
 namespace App\Http\Controllers\admin_report;
 
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
-use App\Models\Centre;
-use App\Models\Centre_Detail;
-use App\Models\Patient;
 use App\Models\patient_bill;
-use App\Models\Post_dialysis;
-use App\Models\StockMaintenance;
+use App\Models\Pre_dialysis;
+use App\Models\Staff;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
-class CenterBasedReportController extends Controller
+class PatientReportController extends Controller
 {
-    //hospital report
-    function hospital_report(Request $req){
+    //patient reports
+    //patient report
+    function patient_report(Request $req){
 
 
-        if($req->branch_code==null){
-            $check_branch = Centre::first();
-            $bc = $check_branch->code;
-        }else{
-            $check_branch = Centre::where('code',$req->branch_code)->first();
-            if(is_null($check_branch)){
-                return response()->json([
-                    'message'=>'invalid branch name',
-                ],403);
-            }
-            $bc = $req->branch_code;
-        }
-
+        $next_month = Carbon::now()->startOfMonth()->addMonth(1)->format('Y-m');
         if($req->date==null){
             $start_date = date('Y-m-01 00:00:00');
             $end_date = date('Y-m-d 00:00:00');
         }else{
             $validator = Validator::make($req->all(),[
-                'date'=>'required|date_format:Y-m-d H:i:s',
+                'date'=>"required|date_format:Y-m|before:$next_month",
             ]);
 
             if($validator->fails()){
@@ -643,214 +35,287 @@ class CenterBasedReportController extends Controller
                 ],403);
             }
 
-            $start_date = Carbon::createFromFormat('Y-m-d H:i:s', $req->date)
+            $start_date = Carbon::createFromFormat('Y-m', $req->date)
                             ->firstOfMonth()
                             ->format('Y-m-d H:i:s');
-            $end_date = $req->date;
+            $end_date = Carbon::createFromFormat('Y-m', $req->date)
+                            ->lastOfMonth()
+                            ->format('Y-m-d H:i:s');
 
         }
 
+        $raw_data = Appointment::join('patient','patient.patient_id','appointments.patient_id')
+                                ->join('pre_dialysis','pre_dialysis.appointment_id','appointments.appointment_id')
+                                ->join('post_dialysis','post_dialysis.appointment_id','appointments.appointment_id')
+                                ->join('patient_bill','patient_bill.appointment_id','appointments.appointment_id')
+                                ->join('centre','centre.code','patient.branch_name')
+                                ->where('end_time','!=',null)
+                                ->whereDate('start_time','<=' ,$end_date)
+                                ->whereDate('start_time','>=' ,$start_date)
+                                ->select('registration_fee','normal_fee','emergency_fee','m_scheduled','m_emergency','per_hour_fee','m_eh','appointments.appointment_id as aid','patient.patient_id as pid','start_time','end_time','centre_name','private','patient.branch_name as pbn','patient.name as patient_name','post_dialysis.technician as end_tech','pre_dialysis.technician as start_tech','post_dialysis.amount as total','post_dialysis.paid as paid','mop','record_type','post_dialysis.eh','scheduled_emergency')
+                                ->get();
 
-
-            $patient = Patient::where('branch_name',$bc)->select('patient_id')->get();
-
-            $pid_array = [];
-            foreach($patient as $p)
-                $pid_array[] = $p->patient_id;
-
-            $app_id = Appointment::whereDate('start_time','<=' ,$end_date)->whereDate('start_time','>=' ,$start_date)->select('appointment_id')->whereIn('patient_id',$pid_array)->where('end_time','!=',null)->get();
-            $dialysis_count = $app_id->count();
-
-
-            // if ap 0 then amount
-            $branch_ap = $check_branch->ap;
-            $branch_code = $check_branch->code;
-            $pay_amount = $check_branch->amount;
-            $pay_percentage = $check_branch->percentage;
-            $branch_perdmy = $check_branch->perdmy;
-
-
-            // if payment is done in amount
-            if($branch_ap==0){
-
-                switch($branch_perdmy){
-                    case "year" : {
-                       $amount = $pay_amount/12;
-                    }
-                    break;
-
-                    case "month" : {
-                        $amount = $pay_amount;
-                    }
-                    break;
-
-                    case "dialysis" : {
-                        $amount = $dialysis_count * $pay_amount;
-                    }
-                    break;
-
-                    default : {
-                        return response()->json([
-                            'message'=>'invalid attempt',
-                        ],404);
-                    }
-                }
-
-            //if payment is done in percentage
-            }else{
-
-                $app_id_array = [];
-                foreach($app_id as $aid)
-                    $app_id_array[] = $aid->appointment_id;
-
-                $per_hour_fee = $check_branch->per_hour_fee;
-                $post_dialysis_data = Post_dialysis::select(DB::raw("SUM(eh) as extra_hour , SUM(amount) as pd_amount"))->whereIn('appointment_id',$app_id_array)->get();
-                $extra_hour_amount = $per_hour_fee * $post_dialysis_data[0]['extra_hour'];
-                $post_dialysis_amount = $post_dialysis_data[0]['pd_amount'];
-                switch($branch_perdmy){
-                    case "year" : {
-                        $amount = round((($pay_percentage/100)*($post_dialysis_amount - $extra_hour_amount)/12),2);
-                    }
-                    break;
-
-                    case "month" : {
-                        $amount = round((($pay_percentage/100)*($post_dialysis_amount - $extra_hour_amount)),2);
-                    }
-                    break;
-
-                    case "dialysis" : {
-                        $amount = round(($pay_percentage/100) * ($dialysis_count * ($post_dialysis_amount - $extra_hour_amount)),2);
-                    }
-                    break;
-
-                    default : {
-                        return response()->json([
-                            'message'=>'invalid attempt',
-                        ],404);
-                    }
-                }
-
-            }
-
-
-
-
-
-
-            $additional = [];
-            $additional_expenses = Centre_Detail::where('centre_name',$check_branch->code)->get();
-            $total_additional_expense = 0;
-            if(!$additional_expenses->isEmpty()){
-                foreach($additional_expenses as $ae){
-                    $total_additional_expense+=$ae->amount;
-                    $additional[] = [
-                        'name'=>$ae->name,
-                        'amount'=>$ae->amount
-                    ];
-                }
-            }
-
-            $data = [
-                'hospital_name'=>$check_branch->centre_name,
-                'hospital_code'=>$branch_code,
-                'dialysis_count'=>$dialysis_count,
-                'additonal_expenses'=>$additional,
-                'amount'=>$amount,
-                'total_amount'=>$total_additional_expense + $amount
-            ];
-
-            return response()->json([
-                'message'=>'hospital report fetched',
-                'data'=>$data,
-            ],200);
-
-    }
-
-    //stock maintainance report
-    function stock_maintainance_report(Request $req){
-
-        if($req->date==null){
-            $start_date = date('Y-m-01 00:00:00');
-            $end_date = date('Y-m-d 00:00:00');
-        }else{
-            $validator = Validator::make($req->all(),[
-                'date'=>'required|date_format:Y-m-d H:i:s',
-            ]);
-
-            if($validator->fails()){
-                return response()->json([
-                    'message'=>'validation error',
-                    'error'=>$validator->errors()
-                ],403);
-            }
-
-            $start_date = Carbon::createFromFormat('Y-m-d H:i:s', $req->date)
-                            ->firstOfMonth()
-                            ->format('Y-m-d H:i:s');
-            $end_date = $req->date;
-        }
-
-        $basic_details = DB::table('appointments')
-                ->whereDate('start_time','<=' ,$end_date)
-                ->whereDate('start_time','>=' ,$start_date)
-                ->where('end_time','!=',null)
-                ->join('patient','patient.patient_id','appointments.patient_id')
-                ->join('centre','centre.code','patient.branch_name')
-                ->join('pre_dialysis','pre_dialysis.appointment_id','appointments.appointment_id')
-                ->select('patient.name as patient_name','pre_dialysis.private','centre.code','centre.centre_name','appointments.appointment_id as app_id','appointments.start_time')
-                ->get();
-
-        if($basic_details->count()<1){
+        if($raw_data->isEmpty()){
             return response()->json([
                 'message'=>'not found'
             ],404);
         }
-
-        $distinct_stocks = StockMaintenance::groupBy('product_name')->get();
-        $total_basic_details = $basic_details->count();
-        $sub_total = 0;
-
         $data = [];
-        foreach($basic_details as $bd){
-            $used_stocks = [];
-            $total = 0;
-            foreach($distinct_stocks as $ds){
-                $patient_bill = patient_bill::where([['appointment_id',$bd->app_id],['name',$ds->product_name]])->select('name','count','cost_price')->first();
-                if($patient_bill==null){
-                    $used_stocks[$ds->product_name] = [
-                        'count' => 0,
-                        'cost_price' => 0,
-                    ];
-                }else{
-                    $total += ($patient_bill->count * $patient_bill->cost_price);
-                    $used_stocks[$patient_bill->name] = [
-                        'count' => $patient_bill->count,
-                        'cost_price' => $patient_bill->cost_price,
-                    ];
-                }
-                $sub_total += $total;
+
+        foreach($raw_data as $rd){
+
+            $pid = 'PID'.$rd->pbn.$rd->pid;
+            $start_staff_id = preg_replace('/[^0-9.]+/', '', $rd->start_tech);
+            $start_tech = Staff::find($start_staff_id);
+            if($start_tech!=null)
+                $start_tech = $start_tech->username;
+            else
+                $start_tech = '';
+            $end_staff_id = preg_replace('/[^0-9.]+/', '', $rd->end_tech);
+            $end_tech = Staff::find($end_staff_id);
+            if($end_tech!=null)
+                $end_tech = $end_tech->username;
+            else
+                $end_tech = '';
+
+            // reg fee
+            $is_patient_first_time = Appointment::where('patient_id', $rd->pid)->whereDate('start_time','<=' ,$end_date)->whereDate('start_time','>=' ,$start_date)->count();
+            $reg_fee = 0;
+            if ($is_patient_first_time == 1)
+                $reg_fee = $rd->registration_fee;
+
+            // dialyzer
+            $dialyzer = patient_bill::where([['appointment_id',$rd->aid],['name','dialyzer']])->first();
+            $dialyzer_brand = 0;
+            $dialyzer_count = 0;
+            $dialyzer_sp = 0;
+            if($dialyzer!=null){
+                $dialyzer_brand = $dialyzer->brand;
+                $dialyzer_count = $dialyzer->count;
+                $dialyzer_sp = $dialyzer->selling_price;
             }
+
+            // Blood Tubing
+            $blood_tubing = patient_bill::where([['appointment_id',$rd->aid],['name','dialyzer']])->first();
+            $blood_tubing_brand = 0;
+            $blood_tubing_count = 0;
+            $blood_tubing_sp = 0;
+            if($dialyzer!=null){
+                $blood_tubing_brand = $blood_tubing->brand;
+                $blood_tubing_count = $blood_tubing->count;
+                $blood_tubing_sp = $blood_tubing->selling_price;
+            }
+
+            // consumables_and_pharmaceuticals_sp
+            $consumables_and_pharmaceuticals_sp = patient_bill::where('appointment_id',$rd->aid)->sum('selling_price');
+
+
+            //therapy_fee
+            $therapy_fee=0;
+            if ($rd->private=='yes') {   //if yes
+
+               if ($rd->scheduled_emergency == 'scheduled')
+                    $therapy_fee = $rd->normal_fee;
+                else
+                    $therapy_fee = $rd->emergency_fee;
+            } else {
+
+
+                if ($rd->scheduled_emergency == 'scheduled')
+                    $therapy_fee = $rd->m_scheduled;
+                else
+                    $therapy_fee = $rd->m_emergency;
+            }
+
+
             $data[] = [
-                'patient_name'=>$bd->patient_name,
-                'hospital_name'=>$bd->centre_name,
-                'scheme'=>($bd->private=='yes') ? 'private' : 'government' ,
-                'date'=>$bd->start_time,
-                'stocks'=> $used_stocks,
-                'total'=> $total,
+                'date'=> date('d-m-Y', strtotime($rd->date)),
+                'hospital_name'=> $rd->centre_name,
+                'scheme'=>($rd->private=='yes')?'Private':'Government',
+                'extra_hour_fee'=>($rd->private=='yes')?$rd->eh * $rd->per_hour_fee:$rd->eh * $rd->m_eh,
+                'patient_name'=>$rd->patient_name,
+                'patient_id'=>$pid,
+                'start_time'=>date('h:i A', strtotime($rd->start_time)),
+                'start_technician'=>$start_tech,
+                'end_time'=>date('h:i A', strtotime($rd->end_time)),
+                'end_technician'=>$end_tech,
+                'registration_fee'=>$reg_fee,
+                'record_type'=>$rd->record_type,
+                'dialyzer_brand'=>$dialyzer_brand,
+                'dialyzer_count'=>$dialyzer_count,
+                'blood_tubing_brand'=>$blood_tubing_brand,
+                'blood_tubing_count'=>$blood_tubing_count,
+                'dialyzer_and_blood_tubing_sp'=> $blood_tubing_sp + $dialyzer_sp,
+                'consumables_and_pharmaceuticals_sp'=> $consumables_and_pharmaceuticals_sp,
+                'therapy_fee'=>$therapy_fee,
+                'mop'=>$rd->mop,
+                'paid'=>$rd->paid,
+                'total'=>$rd->total,
             ];
         }
 
-        $total_average = round($sub_total/$total_basic_details);
-
         return response()->json([
-            'message'=>'stock_maintainence report fetched',
-            'data'=>[
-                $data,
-                'average'=>$total_average,
-                'sub_total'=>$sub_total
-            ]
+            'message'=>'patient_report_fetched',
+            'data'=>$data,
         ],200);
-
     }
 }
+
+
+
+......................................................
+
+
+
+<a name="doctor-reports"></a>
+# Doctor reports
+
+<a name="for-fetching-doctor-report"></a>
+## For fetching doctor report
+<larecipe-badge type="warning" radius="full">Require authorization</larecipe-badge>
+
+---
+
+<h4>This endpoint allows you to fetch doctor report</h4>
+
+> ***Endpoint***
+<larecipe-badge type="success">GET</larecipe-badge>
+
+```php
+    /api/admin/get/doctor/report
+```
+---
+
+> ***Required body : Json data*** 
+
+```php
+    {
+        "date":"2022-01"
+    }
+```
+---
+> ***Response body : 200 , Success***
+
+```php
+    {
+        "message": "doctor report fetched",
+        "data": [
+        {
+            "hospital": "MMH,SDC,RH",
+            "doctor_name": "rahul kr",
+            "no_of_patient": 85,
+            "no_of_dialysis": 2,
+            "new_patient": 1,
+            "no_of_emergency_patient": 0,
+            "no_of_scheduled_patient": 1,
+            "new_patient_cost": 150,
+            "emergency_patient_cost": 0,
+            "scheduled_patient_cost": 100,
+            "doctor_pay": 250
+        },
+        {
+            "hospital": "MMH,PH,RH,OH",
+            "doctor_name": "Dr Sandip Bhurke",
+            "no_of_patient": 29,
+            "no_of_dialysis": 0,
+            "new_patient": 1,
+            "no_of_emergency_patient": 0,
+            "no_of_scheduled_patient": 1,
+            "new_patient_cost": 0,
+            "emergency_patient_cost": 0,
+            "scheduled_patient_cost": 0,
+            "doctor_pay": 0
+        }
+    ]
+```
+
+
+
+ 
+
+
+<a name="patient-reports"></a>
+# Patient reports
+
+<a name="for-fetching-doctor-report"></a>
+## For fetching patient report
+<larecipe-badge type="warning" radius="full">Require authorization</larecipe-badge>
+
+---
+
+<h4>This endpoint allows you to fetch patient report</h4>
+
+> ***Endpoint***
+<larecipe-badge type="success">GET</larecipe-badge>
+
+```php
+    /api/admin/get/patient/report
+```
+---
+
+> ***Required body : Json data*** 
+
+```php
+    {
+        "date":"2022-01"
+    }
+```
+---
+> ***Response body : 200 , Success***
+
+```php
+    {
+        "message": "patient_report_fetched",
+        "data": [
+            {
+                "date": "01-01-1970",
+                "hospital_name": "Mangalmurti Hospital",
+                "scheme": "Private",
+                "extra_hour_fee": 0,
+                "patient_name": "Jyoti mahadik",
+                "patient_id": "PIDMMH20",
+                "start_time": "08:18 AM",
+                "start_technician": "Nishita Hindalekar",
+                "end_time": "11:36 AM",
+                "end_technician": "Nishita Hindalekar",
+                "registration_fee": 0,
+                "record_type": "pre_dialysis",
+                "dialyzer_brand": 0,
+                "dialyzer_count": 0,
+                "blood_tubing_brand": 0,
+                "blood_tubing_count": 0,
+                "dialyzer_and_blood_tubing_sp": 0,
+                "consumables_and_pharmaceuticals_sp": 0,
+                "therapy_fee": 1200,
+                "mop": "Cash",
+                "paid": 1400,
+                "total": 1400
+            },
+            {
+                "date": "01-01-1970",
+                "hospital_name": "Mangalmurti Hospital",
+                "scheme": "Private",
+                "extra_hour_fee": 0,
+                "patient_name": "Jyoti mahadik",
+                "patient_id": "PIDMMH20",
+                "start_time": "08:18 AM",
+                "start_technician": "Nishita Hindalekar",
+                "end_time": "11:36 AM",
+                "end_technician": "Nishita Hindalekar",
+                "registration_fee": 0,
+                "record_type": "pre_dialysis",
+                "dialyzer_brand": 0,
+                "dialyzer_count": 0,
+                "blood_tubing_brand": 0,
+                "blood_tubing_count": 0,
+                "dialyzer_and_blood_tubing_sp": 0,
+                "consumables_and_pharmaceuticals_sp": 0,
+                "therapy_fee": 1200,
+                "mop": "Cash",
+                "paid": 1400,
+                "total": 1400
+            }
+        }
+    ]
+```
 
